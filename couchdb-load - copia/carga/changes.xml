@@ -1,0 +1,146 @@
+<?xml version="1.0"?>
+<!DOCTYPE tsung SYSTEM "/usr/share/tsung/tsung-1.0.dtd">
+<tsung loglevel="notice" version="1.0">
+	
+
+<clients>
+<client host="localhost" weight="1" maxusers="10000" cpu="1" use_controller_vm="true"/>
+</clients>
+
+
+
+
+
+<servers>
+<server host="------" port="5984" type="tcp"/>
+</servers>
+
+
+<load>
+
+<arrivalphase phase="1" duration="20" unit="second">
+	<users maxnumber="3000" arrivalrate="1000" unit="second"></users>
+</arrivalphase>
+
+</load>
+
+<options>
+<option name="file_server" id="userlist" value="/tmp/userlist.csv"/>
+</options>
+
+<!-- Sessions setup -->
+<sessions>
+
+  <session name="postGet" probability="100" type="ts_http">
+  	<thinktime value="10" random="true"/>
+
+  		<setdynvars sourcetype="file" fileid="userlist" delimiter=";" order="iter">
+		<var name="direction"/>
+		</setdynvars>
+
+		<setdynvars sourcetype="random_number" start="0000" end="0100">
+		<var name="firstnum"/>
+		</setdynvars>
+		<setdynvars sourcetype="random_number" start="10" end="12">
+		<var name="mm"/>
+		</setdynvars>
+		<setdynvars sourcetype="random_number" start="10" end="28">
+		<var name="dd"/>
+		</setdynvars>
+		
+
+	<request subst="true">
+		<match do="abort" when="nomatch">201 Created</match>
+		<dyn_variable name="id" jsonpath="$.id"/>
+		<dyn_variable name="rev" jsonpath="$.rev"/>
+		<http
+		method="POST"
+		url="/%%_direction%%"
+		content_type="application/json"
+		contents="{
+		&quot;date&quot;:[
+		&quot;%%_firstnum%%&quot;,
+		&quot;%%_mm%%&quot;,
+		&quot;%%_direction%%&quot;,
+		&quot;%%_dd%%&quot; ]
+		}"
+		>
+		<www_authenticate userid="admin" passwd="------"/>
+		<http_header name="Accept" value="application/json"/>
+		</http>
+	</request>
+<for from="0" to="5" incr="1" var="x">
+		<thinktime value="10" random="true" />
+		<request subst="true">
+			
+			<http method="GET" url="/%%_direction%%/%%_id%%">
+				<www_authenticate userid="admin" passwd="------"/>
+				
+				<http_header name="Accept" value="application/json"/>
+			</http>
+		</request>
+	</for>
+	
+	<thinktime value="10" random="true"/>
+	<request subst="true">
+		<dyn_variable name="last_seq" jsonpath="$.last_seq"/>
+		<http method="GET" url="/%%_direction%%/_changes">
+			<www_authenticate userid="admin" passwd="------"/>
+			<http_header name="Accept" value="application/json"/>
+		</http>
+	</request>
+
+<request subst="true">
+		<match do="abort" when="nomatch">201 Created</match>
+		<dyn_variable name="id" jsonpath="$.id"/>
+		<dyn_variable name="rev" jsonpath="$.rev"/>
+		<http
+		method="POST"
+		url="/%%_direction%%"
+		content_type="application/json"
+		contents="{
+		&quot;date&quot;:[
+		&quot;%%_firstnum%%&quot;,
+		&quot;%%_mm%%&quot;,
+		&quot;%%_direction%%&quot;,
+		&quot;%%_dd%%&quot; ]
+		}"
+		>
+		<www_authenticate userid="admin" passwd="------"/>
+		<http_header name="Accept" value="application/json"/>
+		</http>
+	</request>
+
+
+
+	<thinktime value="10" random="true" />
+		<request subst="true">
+			<dyn_variable name="rev" jsonpath="$.rev"/>
+			<http 
+				method="PUT" 
+				url="/%%_direction%%/%%_id%%"
+				content_type="application/json"
+				contents="{
+					&quot;date&quot;:[
+						&quot;%%_firstnum%%&quot;
+						 ],
+						 &quot;_rev&quot;:&quot;%%_rev%%&quot;
+				}">
+				<www_authenticate userid="admin" passwd="------"/>
+				<http_header name="Accept" value="application/json"/>
+			</http>
+		</request>
+
+	<thinktime value="10" random="true" />
+		<request subst="true">
+			<http method="GET" url="/%%_direction%%/_changes?since=%%_last_seq%%">
+				<www_authenticate userid="admin" passwd="------"/>
+				<http_header name="Accept" value="application/json"/>
+			</http>
+		</request>
+</session>
+
+
+  
+</sessions>
+</tsung>
